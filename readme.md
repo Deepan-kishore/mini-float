@@ -61,6 +61,9 @@ import "@bitnoi.se/react-scheduler/dist/style.css";
 ```ts
 import { Scheduler, SchedulerData } from "@bitnoi.se/react-scheduler";
 import dayjs from "dayjs";
+import isBetween from 'dayjs/plugin/isBetween';
+
+dayjs.extend(isBetween);
 
 default export function Component() {
   const [filterButtonState, setFilterButtonState] = useState(0);

@@ -138,6 +138,7 @@ export const Calendar: FC<CalendarProps> = ({
       />
       <StyledInnerWrapper>
         <Header
+        
           zoom={zoom}
           topBarWidth={topBarWidth}
           showThemeToggle={showThemeToggle}

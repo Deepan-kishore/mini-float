@@ -1,4 +1,4 @@
-import { forwardRef, useCallback, useEffect, useRef } from "react";
+import { forwardRef, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { useTheme } from "styled-components";
 import { drawGrid } from "@/utils/drawGrid/drawGrid";
 import { boxHeight, canvasWrapperId, leftColumnWidth, outsideWrapperId } from "@/constants";
@@ -8,6 +8,12 @@ import { resizeCanvas } from "@/utils/resizeCanvas";
 import { getCanvasWidth } from "@/utils/getCanvasWidth";
 import { GridProps } from "./types";
 import { StyledCanvas, StyledInnerWrapper, StyledSpan, StyledWrapper } from "./styles";
+import dayjs from "dayjs";
+import { getDateFromCoordinates } from "@/utils/getTileProperties";
+import { getDatesRange } from "@/utils/getDatesRange";
+import { createPortal } from "react-dom";
+import AddEventModal from "./AddEvent";
+import { DataContext } from "@/context/DataContext";
 
 const Grid = forwardRef<HTMLDivElement, GridProps>(function Grid(
   { zoom, rows, data, onTileClick },
@@ -17,8 +23,19 @@ const Grid = forwardRef<HTMLDivElement, GridProps>(function Grid(
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const refRight = useRef<HTMLSpanElement>(null);
   const refLeft = useRef<HTMLSpanElement>(null);
-
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<null | dayjs.Dayjs>(null);
+  const [eventDetails, setEventDetails] = useState({
+    id:'',
+    startDate: dayjs(),
+    endDate: dayjs(),
+    title: '',
+    subtitle: '',
+    description: '',
+    color: '#000000',
+  });
   const theme = useTheme();
+  const dataContextConsumer = useContext(DataContext);
 
   const handleResize = useCallback(
     (ctx: CanvasRenderingContext2D) => {
@@ -36,7 +53,6 @@ const Grid = forwardRef<HTMLDivElement, GridProps>(function Grid(
     if (!ctx) return;
 
     const onResize = () => handleResize(ctx);
-
     window.addEventListener("resize", onResize);
 
     return () => window.removeEventListener("resize", onResize);
@@ -77,16 +93,85 @@ const Grid = forwardRef<HTMLDivElement, GridProps>(function Grid(
     return () => observerLeft.disconnect();
   }, [handleScrollPrev]);
 
+  const handleCanvasClick = (event: React.MouseEvent<HTMLCanvasElement>) => {
+    console.log("data", data);
+  
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+  
+    const rect = canvas.getBoundingClientRect();
+    const x = event.clientX - rect.left;
+    const y = event.clientY - rect.top;
+  
+    const datesRange = getDatesRange(date, zoom);
+    const clickedDate = getDateFromCoordinates(x, y, zoom, datesRange.startDate);
+  
+    // Calculate the row index based on the y-coordinate
+    const rowIndex = Math.floor(y / boxHeight);
+  
+    // Find the corresponding data ID from the dataset
+    const dataId = data[rowIndex]?.id;
+  
+    console.log("Clicked Row Index:", rowIndex);
+    console.log("Data ID:", dataId);
+  
+    setEventDetails((prev) => ({
+      ...prev,
+      startDate: clickedDate,
+      endDate: clickedDate,
+      id: dataId,
+    }));
+    setSelectedDate(clickedDate);
+    setIsModalOpen(true);
+  };
+
+  const handleSave = () => {
+    if (dataContextConsumer) {
+      dataContextConsumer.createData(eventDetails);
+    }
+    resetEventDetails();
+    setIsModalOpen(false);
+  };
+
+  const handleCancel = () => {
+    resetEventDetails();
+    setIsModalOpen(false);
+  };
+
+  const resetEventDetails = () => {
+    setEventDetails({
+      id:'',
+      startDate: dayjs(),
+      endDate: dayjs(),
+      title: '',
+      subtitle: '',
+      description: '',
+      color: '#000000',
+    });
+  };
+
   return (
     <StyledWrapper id={canvasWrapperId}>
       <StyledInnerWrapper ref={ref}>
         <StyledSpan position="left" ref={refLeft} />
         <Loader isLoading={isLoading} position="left" />
-        <StyledCanvas ref={canvasRef} />
+        <StyledCanvas ref={canvasRef} onClick={handleCanvasClick} />
         <Tiles data={data} zoom={zoom} onTileClick={onTileClick} />
         <StyledSpan ref={refRight} position="right" />
         <Loader isLoading={isLoading} position="right" />
       </StyledInnerWrapper>
+
+      {createPortal(
+       
+          <AddEventModal
+            data={{ eventDetails, setEventDetails }}
+            isModalOpen={isModalOpen}
+            handleClose={handleCancel}
+            handleSave={handleSave}
+          />
+        ,
+        document.body
+      )}
     </StyledWrapper>
   );
 });

@@ -1,5 +1,5 @@
 import { useTheme } from "styled-components";
-import { FC, MouseEventHandler } from "react";
+import { FC, MouseEventHandler, useContext, useEffect } from "react";
 import { Icon, IconButton, Toggle } from "@/components";
 import { useCalendar } from "@/context/CalendarProvider";
 import { useLanguage } from "@/context/LocaleProvider";
@@ -13,9 +13,11 @@ import {
   OptionsContainer
 } from "./styles";
 import { TopbarProps } from "./types";
+import { AppContext, useAppContext } from "@/main";
 
 const Topbar: FC<TopbarProps> = ({ width, showThemeToggle, toggleTheme }) => {
   const { topbar } = useLanguage();
+  const handlers = useCalendar();
   const {
     data,
     config,
@@ -28,15 +30,64 @@ const Topbar: FC<TopbarProps> = ({ width, showThemeToggle, toggleTheme }) => {
     isPrevZoom,
     handleFilterData,
     onClearFilterData
-  } = useCalendar();
+  } = handlers;
   const { colors } = useTheme();
   const { filterButtonState = -1 } = config;
 
   const handleClearFilters: MouseEventHandler<HTMLButtonElement> = (event) => {
+    
     event.stopPropagation();
     onClearFilterData?.();
   };
+  const context = useContext(AppContext);
+  if (!context) {
+    throw new Error('useAppContext must be used within an AppProvider');
+  }
 
+  const { topBarHandlers } = useAppContext();
+const AppcontextRef = topBarHandlers?.current ?? {};
+  useEffect(() => {
+for(const key in handlers){
+  if (handlers.hasOwnProperty(key)) {
+    // handlers[key as keyof typeof AppcontextRef] = handlers[key as keyof typeof handlers];
+AppcontextRef[key as keyof typeof AppcontextRef] = handlers[key as keyof typeof handlers];
+  }
+}
+
+AppcontextRef.onClearFilterData = handleClearFilters;
+    
+// AppcontextRef?.current?.handleGoToday = handleGoToday;
+
+    
+
+    // Cleanup on unmount
+    return () => {
+      // topBarHandlers.current.someFunction = undefined;
+      // topBarHandlers.current.anotherFunction = undefined;
+    };
+  }, [topBarHandlers,handlers]);
+
+  useEffect(()=>{
+
+  },[AppcontextRef,handlers])
+  
+  // useEffect(()=>{
+  //   AppContextRef = {
+  //     data,
+  //     config,
+  //     handleGoNext,
+  //     handleGoPrev,
+  //     handleGoToday,
+  //     zoomIn,
+  //     zoomOut,
+  //     isNextZoom,
+  //     isPrevZoom,
+  //     handleFilterData,
+  //     onClearFilterData
+  //   };
+  // },[])
+
+  return <></>
   return (
     <Wrapper width={width}>
       <Filters>

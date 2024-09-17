@@ -12,7 +12,7 @@ const resetBtnStyles = `
 `;
 
 export const Wrapper = styled.div<TopbarProps>`
-  width: calc(${({ width }) => width}px - ${leftColumnWidth}px);
+  width: calc(${({ width }) => width}px - (${leftColumnWidth+100}px));
   position: sticky;
   top: 0;
   left: ${leftColumnWidth}px;

@@ -10,6 +10,7 @@ export const GlobalStyle = createGlobalStyle`
     line-height: 1.15;
     -webkit-text-size-adjust: 100%;
     margin: 0;
+    scroll-bar-width: none;
   }
 
  #${prefixId} *,
@@ -113,8 +114,8 @@ white-space: nowrap;
 `;
 
 export const StyledSchedulerFrame = styled.div`
-  margin: 10rem 10rem;
-  position: relative;
-  width: 40vw;
-  height: 40vh;
+margin: 0rem;
+    position: relative;
+    width: 100vw;
+    height: 80vh;
 `;
